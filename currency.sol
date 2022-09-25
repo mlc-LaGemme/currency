@@ -82,6 +82,7 @@ contract _template_ is owned {
   mapping (address => int256) public balanceCM;                 // Balance in Mutual credit
   mapping (address => int256) public limitCredit;               // Min limit (minimal accepted CM amount expected to be 0 or <0 )
   mapping (address => int256) public limitDebit;                // Max limit  (maximal accepted CM amount expected to be 0 or >0 )
+  mapping (address => adress) public newAddress;                // Address which replaces the current one
   
   /* Allowance, Authorization and Request:*/
   
@@ -116,7 +117,8 @@ contract _template_ is owned {
   event CreditLimitChange(uint256 time, address target, int256 amount);
   event DebitLimitChange(uint256 time, address target, int256 amount);
   event Refilled(uint256 time, address target, uint256 balance, uint256 limit);
-  
+  event SetNewAddress(uint256 time, address target, bool accstatus);
+
   /* Token transfert */
   event Pledge(uint256 time, address indexed to, int256 recieved);
   event Transfer(uint256 time, address indexed from, address indexed to, int256 sent, int256 tax, int256 recieved);
@@ -260,7 +262,23 @@ contract _template_ is owned {
     topUp(_targetAccount);
     topUp(msg.sender);
   }
-  
+
+  /* Set newAddress to replace, and desactive, the current one
+  function setNewAddress(address _newAddress) public{
+    if (!actif) revert();  // panic lock
+    if (!accountStatus[msg.sender]) revert(); //Check neither of the Account are locked
+    if (!accountStatus[_newAddress]) revert();
+
+    // Set the address which replace the current one
+    newAddress[msg.sender] = _newAddress;
+    // Deactivate the current address so that it does'nt receive transfer anymore
+    accountStatus[msg.sender] = false;
+
+    emit SetNewAddress(now, newAddress[msg.sender], accountStatus[msg.sender]);        // Notify anyone listening that this setting took place
+    // ensure the ETH level of the account
+    topUp(_to);
+    topUp(_from);
+  }
  
   /****** Coin and Barter transfert *******/ 
   /* Coin creation (Nantissement) */
